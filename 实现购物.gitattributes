@@ -1,7 +1,7 @@
 
 # 获取白名单和黑名单
-with open("white_list.txt", "a+", encoding="utf-8") as white_f, \
-        open("black_list.txt", "a+", encoding="utf-8") as black_f:
+with open("white_list.txt", "r+", encoding="utf-8") as white_f, \
+        open("black_list.txt", "r+", encoding="utf-8") as black_f:
     account_dic_b = {}
     balance_account_b = {}
     account_dic_w = {}
