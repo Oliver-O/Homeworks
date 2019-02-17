@@ -1,7 +1,13 @@
 
+goods_dic = {"1": ("进口凤梨", 25),
+             "2": ("荷兰青啤梨", 5),
+             "3": ("椰青泰国椰子", 10),
+             "4": ("新西兰红玫瑰Queen苹果", 6),
+             "5": ("南非夏橙", 3)}
+
 # 获取白名单和黑名单
-with open("white_list.txt", "r+", encoding="utf-8") as white_f, \
-        open("black_list.txt", "r+", encoding="utf-8") as black_f:
+with open("white_list.txt", "w+", encoding="utf-8") as white_f, \
+        open("black_list.txt", "w+", encoding="utf-8") as black_f:
     account_dic_b = {}
     balance_account_b = {}
     account_dic_w = {}
@@ -19,22 +25,12 @@ with open("white_list.txt", "r+", encoding="utf-8") as white_f, \
             account_dic_w[name_w] = code_w
             balance_account_w[name_w] = balance_w
 
-goods_dic = {"1": ("进口凤梨", 25),
-             "2": ("荷兰青啤梨", 5),
-             "3": ("椰青泰国椰子", 10),
-             "4": ("新西兰红玫瑰Queen苹果", 6),
-             "5": ("南非夏橙", 3)}
 
-
-def write_in_white(name):
-    """非黑,非白,写白"""
-
-    with open("white_list.txt", "a+", encoding="utf-8") as white_f, \
-            open("black_list.txt", "a+", encoding="utf-8") as black_f:
-
+    def write_in_white(name):
+        """非黑,非白,写白"""
         # 判定账户名不在黑名单
-        while name not in account_dic_b and len(name) > 0:  # 账户确认，非空
-            while name not in account_dic_w:  # 不在白名单,加入白名单
+        while name not in account_dic_b.keys() and len(name) > 0:  # 账户确认，非空
+            while name not in account_dic_w.keys():  # 不在白名单,加入白名单
                 code = input("请输入密码：")
                 while len(code) > 0:
                     code_1 = input("请再输入一次密码！")
@@ -43,6 +39,7 @@ def write_in_white(name):
                         print("注册成功!")
                         balance = top_up(name)  # 充值
                         # 写入白名单
+                        print(balance)
                         white_f.write("{}|{}|{}\n".format(name, code, balance))
                         return balance
                     else:
@@ -60,16 +57,36 @@ def write_in_white(name):
             exit()
 
 
-def member(name):
-    """非黑,白, 读白写黑"""
-    with open("white_list.txt", "a+", encoding="utf-8") as white_f, \
-            open("black_list.txt", "a+", encoding="utf-8") as black_f:
+    def top_up(name):
+        while True:
+            key_in = input("请输入充值金额:")
+            if key_in.isnumeric():
+                money_plus = eval(key_in)
+                if money_plus >= 0:
+                    save_in = input("您当前充值金额为：{} RMB, 确认充值请输：1, 更改充值金额请输入：2 !".format(key_in))
+                    if save_in == "1":  # 充值金额确认
+                        balance_account_w[name] = balance_account_w.get(name, 0) + eval(key_in)
+                        balance = balance_account_w[name]
+                        print("您的账户:{}成功充值金额{}".format(name, balance_account_w[name]))
+                        return balance
+                    elif save_in == "2":
+                        break
+                    break
+                else:
+                    print("充值金额，不能为负数，请请确认！")
+                    break
+            else:
+                print("输入内容有误，请确认！")
+                continue
 
-        while name not in account_dic_b and len(name) > 0:  # 非黑
+
+    def member(name):
+        """非黑,白, 读白写黑"""
+        while name not in account_dic_b.keys() and len(name) > 0:  # 非黑
             # 三次验证
             try_times = 3
             while try_times > 0:
-                if name in account_dic_w:  # 账户在白名单
+                if name in account_dic_w.keys():  # 账户在白名单
                     code = input("请输入密码：")
                     if code == account_dic_w[name]:  # 密码正确
                         balance = balance_account_w[name]
@@ -101,110 +118,82 @@ def member(name):
             exit()
 
 
-def purchase_goods(good):
-    amount = 0
-    while good in goods_dic.keys():
-        number = input("请输入数量(正数增加,负数减小):")
-        if number.isnumeric():
-            amount += goods_dic[good][1] * eval(number)
-            return amount
-        else:
-            print("输入内容有误，请确认！")
-            continue
-
-
-def account_check(is_reg):
-    """ 是否已注册"""
-    while True:
-        if is_reg == "Y":
-            name = input("请输入账户名：")
-            balance = member(name)
-            return name, balance
-        while is_reg == "N":
-            name = input("请输入账户名：")
-            balance = write_in_white(name)
-            return name, balance
-        else:
-            print("输入不符合要求，请重新输入！")
-            is_reg = input("是否已注册会员?\n 是请输入:Y，否请输入: N")
-            continue
-
-
-def pur_process(name, balance):
-    amount = 0
-    purchase_dic = { }
-    while True:
-        if amount <= balance:
-            print("商品编号及单价\n", goods_dic)
-            good_no = input("请输入商品编号")
-            good = goods_dic[good_no][0]  # 编号对应的商品
-            amount = purchase_goods(good_no)  # 购买数量和费用
-            purchase_dic[good] = purchase_dic.get(good, 0) + amount  # 某一商品费用合计
-            if purchase_dic[good] > 0:  # 选购某一商品总数不能为负数
-                for i in purchase_dic.values():  # 购买商品及其总价格
-                    amount += i
-                check_tag = input("继续选购请输入：1，结束选购并结账请输入：2，\
-                 放弃所有选购退出请输入：3")
-                if check_tag == "1":
-                    continue
-                elif check_tag == "2":
-                    for x, y in purchase_dic.items():
-                        for key in goods_dic.values():
-                            if x == key[0]:
-                                print("{},数量{}，金额{}RMB".format(x, y / key[1], y))
-                            else:
-                                continue
-                    print("本次消费{}RMB,当前账户余额{}RMB,谢谢惠顾！".format(amount, balance - amount))
-
-                    # 白名单删除
-                    f = white_f.read()
-                    f = f.replace("{}|{}|{}\n".format(name, account_dic_w[name], balance_account_w[name]),
-                                  "")
-                    white_f.write(f)
-                    exit()
-                elif check_tag == "3":
-                    print("谢谢惠顾！")
-                    exit()
-            else:
-                print("选购某一商品总数不能为负,请再次确认！")
-                break
-        else:
-            print("账户余额不足！")
-            balance = top_up(name)  # 充值
-            continue
-
-
-def top_up(name):
-    with open("white_list.txt", "a+", encoding="utf-8") as white_f, \
-            open("black_list.txt", "a+", encoding="utf-8") as black_f:
+    def pur_process(name, balance):
+        amount = 0
+        purchase_dic = {}
         while True:
-            key_in = input("请输入充值金额:")
-            if key_in.isnumeric():
-                money_plus = eval(key_in)
-                if money_plus >= 0:
-                    save_in = input("您当前充值金额为：{} RMB, 确认充值请输：1, 更改充值金额请输入：2 !".format(key_in))
-                    if save_in == "1":  # 充值金额确认
-                        balance_account_w[name] = balance_account_w.get(name, 0) + eval(key_in)
-                        balance = balance_account_w[name]
-                        print("您的账户:{}成功充值金额{}".format(name, balance_account_w[name]))
-                        return balance
-                    elif save_in == "2":
-                        break
-                    break
+            if amount <= balance:
+                print("商品编号及单价\n", goods_dic)
+                good_no = input("请输入商品编号")
+                good = goods_dic[good_no][0]  # 编号对应的商品
+                amount = purchase_goods(good_no)  # 购买数量和费用
+                purchase_dic[good] = purchase_dic.get(good, 0) + amount  # 某一商品费用合计
+                if purchase_dic[good] > 0:  # 选购某一商品总数不能为负数
+                    for i in purchase_dic.values():  # 购买商品及其总价格
+                        amount += i
+                    check_tag = input("继续选购请输入：1，结束选购并结账请输入：2，\
+                     放弃所有选购退出请输入：3")
+                    if check_tag == "1":
+                        continue
+                    elif check_tag == "2":
+                        for x, y in purchase_dic.items():
+                            for key in goods_dic.values():
+                                if x == key[0]:
+                                    print("{},数量{}，金额{}RMB".format(x, y / key[1], y))
+                                else:
+                                    continue
+                        print("本次消费{}RMB,当前账户余额{}RMB,谢谢惠顾！".format(amount, balance - amount))
+                        # 更改白名单账户余额内容
+                        f = white_f.read()
+                        f = f.replace("{}|{}|{}\n".format(name, account_dic_w[name], balance_account_w[name]),
+                                      "{}|{}|{}\n".format(name, account_dic_w[name], balance - amount))
+                        white_f.write(f)
+                        exit()
+                    elif check_tag == "3":
+                        print("谢谢惠顾！")
+                        exit()
                 else:
-                    print("充值金额，不能为负数，请请确认！")
+                    print("选购某一商品总数不能为负,请再次确认！")
                     break
+            else:
+                print("账户余额不足！")
+                balance = top_up(name)  # 充值
+                continue
+
+
+    def purchase_goods(good):
+        amount = 0
+        while good in goods_dic.keys():
+            number = input("请输入数量(正数增加,负数减小):")
+            if number.isnumeric():
+                amount += goods_dic[good][1] * eval(number)
+                return amount
             else:
                 print("输入内容有误，请确认！")
                 continue
 
 
-def main():
-    print("是否已注册会员?")
-    is_reg = input("是请输入:Y，否请输入: N")
-    name, balance = account_check(is_reg)
-    pur_process(name, balance)
+    def account_check(is_reg):
+        """ 是否已注册"""
+        while True:
+            if is_reg == "Y":
+                name = input("请输入账户名：")
+                balance = member(name)
+                return name, balance
+            elif is_reg == "N":
+                name = input("请输入账户名：")
+                balance = write_in_white(name)
+                return name, balance
+            else:
+                print("输入不符合要求，请重新输入！")
+                is_reg = input("是否已注册会员?\n 是请输入:Y，否请输入: N")
+                continue
 
 
-if __name__ == "__main__":
-    main()
+    def main():
+        print("是否已注册会员?")
+        is_reg = input("是请输入:Y，否请输入: N")
+        name, balance = account_check(is_reg)
+        pur_process(name, balance)
+    if __name__ == "__main__":
+        main()
