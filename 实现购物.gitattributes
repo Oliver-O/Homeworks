@@ -1,18 +1,33 @@
+import os
+
 goods_dic = {"1": ("进口凤梨", 25),
              "2": ("荷兰青啤梨", 5),
              "3": ("椰青泰国椰子", 10),
              "4": ("新西兰红玫瑰Queen苹果", 6),
              "5": ("南非夏橙", 3)}
 
+
+def rename_w():
+    os.remove("white_list.txt")
+    os.rename("white_w.txt", "white_list.txt")
+
+
+def rename_b():
+    os.remove("black_list.txt")
+    os.rename("black_w.txt", "black_list.txt")  # 在with语句里能使用os.rename()吗？
+
+
 # 获取白名单和黑名单
-with open("white_list.txt", "r+", encoding="utf-8") as white_f, \
-        open("black_list.txt", "a+", encoding="utf-8") as black_f:
+with open("white_list.txt", "r", encoding="utf-8") as white_r, \
+        open("white_w.txt", "w+", encoding="utf-8") as white_w,\
+        open("black_list.txt", "r", encoding="utf-8") as black_r,\
+        open("black_w.txt", "w+", encoding="utf-8") as black_w:
     account_dic_b = {}
     balance_account_b = {}
     account_dic_w = {}
     balance_account_w = {}
     # 获取黑名单
-    for line in black_f.readlines():
+    for line in black_r.readlines():
         l = line.strip().split("|")
         for i in range(2):
             # 将账户信息放入字典
@@ -20,7 +35,7 @@ with open("white_list.txt", "r+", encoding="utf-8") as white_f, \
             account_dic_b[name_b] = l[1]
             balance_account_b[name_b] = l[2]
     # 获取白名单
-    for line in white_f.readlines():
+    for line in white_r.readlines():
         l = line.strip().split("|")
         for i in range(2):
             # 将账户信息放入字典
@@ -42,8 +57,10 @@ with open("white_list.txt", "r+", encoding="utf-8") as white_f, \
                         print("注册成功!")
                         balance = top_up(name)  # 充值
                         # 写入白名单
-                        f = white_f.read()     # 覆盖写入，导致写文件之前清空之前信息
-                        white_f.write("{}{}|{}|{}\n".format(f, name, code, balance))
+                        white_r.seek(0)
+                        f = white_r.read()     # 覆盖写入，导致写文件之前清空之前信息
+                        white_w.write("{}{}|{}|{}\n".format(f, name, code, balance))
+                        rename_w()
                         return balance
                     else:
                         print("两次密码不一致,请重新输入！")
@@ -110,15 +127,18 @@ with open("white_list.txt", "r+", encoding="utf-8") as white_f, \
             if try_times <= 0:
                 print("密码输错次数达到上限,该账户已被锁定！")
                 # 写入黑名单
-                black_f.write("{}|{}|{}\n".format(name, account_dic_w[name], balance_account_w[name]))
+                s = black_r.read()
+                black_w.write("{}{}|{}|{}\n".format(s, name, account_dic_w[name], balance_account_w[name]))
                 # 白名单删除
-                f = white_f.read()
+                f = white_r.read()
                 f = f.replace("{}|{}|{}\n".format(name, account_dic_w[name], balance_account_w[name]), "")
-                white_f.write(f)
+                white_w.write(f)
+                # 更改名字
+                rename_b()
                 exit()
-        else:
-            print("账户已锁定")
-            exit()
+            else:
+                print("账户已锁定")
+                exit()
 
 
     def pur_process(name, balance):
@@ -147,12 +167,12 @@ with open("white_list.txt", "r+", encoding="utf-8") as white_f, \
                                     continue
                         print("本次消费{}RMB,当前账户余额{}RMB,谢谢惠顾！".format(amount_s, balance - amount_s))
                         # 更改白名单账户余额内容
-                        f = white_f.read()
-                        f = f.replace("{}|*|{}\n".format(name, balance),    # 改用通配符替换密码
-                                      "{}|*|{}\n".format(name, balance - amount_s))
-                        white_f.write(f)
-                        f = white_f.read()
-                        print(f)
+                        white_r.seek(0)
+                        f = white_r.read()
+                        f = f.replace("{}|{}|{}\n".format(name, account_dic_w[name], balance),    # 改用通配符替换密码
+                                      "{}|{}|{}\n".format(name, account_dic_w[name], balance - amount_s))
+                        white_w.write(f)
+                        rename_w()
                         exit()
                     elif check_tag == "3":
                         print("谢谢惠顾！")
