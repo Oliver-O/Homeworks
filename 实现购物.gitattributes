@@ -43,8 +43,9 @@ def write_in_white(name):
                 while code_1 == code:  # 密码确认
                     account_dic_w[name] = code
                     print("注册成功!")
-                    balance = float(top_up(name))  # 充值
-                    code, balance, tag = pur_process(name, balance)
+                    balance = top_up(name)  # 充值
+                    balance_account_w[name] = balance                   
+                    code, balance, tag = pur_process(name, float(balance))
                     return code, balance, tag
                 else:
                     print("两次密码不一致,请重新输入！")
@@ -158,7 +159,11 @@ def pur_process(name, balance):
 
                     elif check_tag_1 == "3":
                         print("谢谢惠顾！")
-                        exit()
+                        password = account_dic_w[name]
+                        balance = balance_account_w[name]
+                        tag = "2"
+                        return password, balance, tag
+
                 else:       # 余额不够提醒
                     print("账户余额不足！")
                     purchase_dic[good] = purchase_dic.get(good, 0) - amount
@@ -181,7 +186,10 @@ def pur_process(name, balance):
                         return password, balance, tag
                     elif check_tag_2 == "3":
                         print("谢谢惠顾！")
-                        exit()
+                        password = account_dic_w[name]
+                        balance = balance_account_w[name]
+                        tag = "2"
+                        return password, balance, tag
                     elif check_tag_2 == "4":
                         balance_account_w[name] = balance - amount_s + amount
                         balance = top_up(name)
@@ -206,7 +214,10 @@ def pur_process(name, balance):
             return password, balance, tag
         while check_tag == "3":
             print("谢谢惠顾！")
-            exit()
+            password = account_dic_w[name]
+            balance = balance_account_w[name]
+            tag = "2"
+            return password, balance, tag
 
 
 def purchase_goods(good):
@@ -226,14 +237,7 @@ def main():
 
     password, balance, tag = account_process(name)
 
-    if tag == "1":      # 新增账户
-        with open("white_list.txt", "r", encoding="utf-8") as write_w:
-            # 写入白名单
-            str_in = "{}|{}|{}\n".format(name, password, balance)
-            write_w.write(str_in)
-            exit()
-
-    elif tag == "2":     # 账户内容变更
+    if tag == "2":     # 账户内容变更
         with open("white_list.txt", "r", encoding="utf-8") as read_w, \
                 open("white_w.txt", "w", encoding="utf-8") as write_w:
             read_w.seek(0)
